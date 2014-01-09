@@ -53,7 +53,13 @@ static void sync_transfer_wait_for_completion(struct libusb_transfer *transfer)
 				continue;
 			usbi_err(ctx, "libusb_handle_events failed: %s, cancelling transfer and retrying",
 				 libusb_error_name(r));
-			libusb_cancel_transfer(transfer);
+			if( libusb_cancel_transfer(transfer) == LIBUSB_ERROR_NOT_FOUND) {
+				struct usbi_transfer *itransfer;
+				itransfer = LIBUSB_TRANSFER_TO_USBI_TRANSFER(transfer);
+				transfer->status = LIBUSB_TRANSFER_CANCELLED;
+				usbi_handle_transfer_completion(itransfer, transfer->status);
+				break;
+			}
 			continue;
 		}
 	}
